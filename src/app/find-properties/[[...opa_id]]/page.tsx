@@ -1,26 +1,25 @@
-"use client";
+'use client';
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from 'react';
 import {
   FilterView,
   PropertyDetailSection,
   PropertyMap,
   SidePanel,
   SidePanelControlBar,
-} from "@/components";
-import { FilterProvider } from "@/context/FilterContext";
-import { NextUIProvider, Spinner } from "@nextui-org/react";
-import { X, GlobeHemisphereWest, ListBullets } from "@phosphor-icons/react";
-import { MapGeoJSONFeature } from "maplibre-gl";
-import StreetView from "../../../components/StreetView";
-import { centroid } from "@turf/centroid";
-import { Position } from "geojson";
-import { ThemeButton } from "../../../components/ThemeButton";
-import { useRouter } from "next/navigation";
-import { ViewState } from "react-map-gl";
-import { PiX } from "react-icons/pi";
+} from '@/components';
+import { NextUIProvider, Spinner } from '@nextui-org/react';
+import { X, GlobeHemisphereWest, ListBullets } from '@phosphor-icons/react';
+import { MapGeoJSONFeature } from 'maplibre-gl';
+import StreetView from '../../../components/StreetView';
+import { centroid } from '@turf/centroid';
+import { Position } from 'geojson';
+import { ThemeButton } from '../../../components/ThemeButton';
+import { useRouter } from 'next/navigation';
+import { ViewState } from 'react-map-gl';
+import { PiX } from 'react-icons/pi';
 
-export type BarClickOptions = "filter" | "download" | "detail" | "list";
+export type BarClickOptions = 'filter' | 'download' | 'detail' | 'list';
 
 type MapPageProps = {
   params: {
@@ -31,8 +30,9 @@ type MapPageProps = {
 const MapPage = ({ params }: MapPageProps) => {
   const [featuresInView, setFeaturesInView] = useState<MapGeoJSONFeature[]>([]);
   const [featureCount, setFeatureCount] = useState<number>(0);
-  const [currentView, setCurrentView] = useState<BarClickOptions>("detail");
+  const [currentView, setCurrentView] = useState<BarClickOptions>('detail');
   const [loading, setLoading] = useState(true);
+  const [hasLoadingError, setHasLoadingError] = useState(false);
   const [selectedProperty, setSelectedProperty] =
     useState<MapGeoJSONFeature | null>(null);
   const [isStreetViewModalOpen, setIsStreetViewModalOpen] =
@@ -40,8 +40,8 @@ const MapPage = ({ params }: MapPageProps) => {
   const [streetViewLocation, setStreetViewLocation] = useState<Position | null>(
     null
   );
-  const [smallScreenMode, setSmallScreenMode] = useState("map");
-  const prevRef = useRef("map");
+  const [smallScreenMode, setSmallScreenMode] = useState('map');
+  const prevRef = useRef('map');
   const sizeRef = useRef(0);
   const prevCoordinateRef = useRef<Position | null>(null);
   const linkedPropertyRef = useRef<string | null>(null);
@@ -85,7 +85,7 @@ const MapPage = ({ params }: MapPageProps) => {
         });
         setIsLinkedPropertyParsed(true);
       } catch {
-        router.push("/find-properties");
+        router.push('/find-properties');
       }
     };
 
@@ -98,7 +98,7 @@ const MapPage = ({ params }: MapPageProps) => {
       getLinkedPropertyDetails();
     } else {
       // Invalid OPA ID- redirect to main map page
-      router.push("/find-properties");
+      router.push('/find-properties');
     }
   }, [initialViewState, params, router]);
 
@@ -124,27 +124,27 @@ const MapPage = ({ params }: MapPageProps) => {
   useEffect(() => {
     if (!selectedProperty) return;
     const opa_id = selectedProperty.properties.opa_id;
-    history.replaceState(null, "", `/find-properties/${opa_id}`);
+    history.replaceState(null, '', `/find-properties/${opa_id}`);
   }, [selectedProperty]);
 
   const updateCurrentView = (view: BarClickOptions) => {
-    setCurrentView(view === currentView ? "detail" : view);
+    setCurrentView(view === currentView ? 'detail' : view);
     if (
-      prevRef.current === "map" &&
+      prevRef.current === 'map' &&
       window.innerWidth < 640 &&
-      (view === "filter" ||
+      (view === 'filter' ||
         (Object.keys(params).length === 0 && prevCoordinateRef.current))
     ) {
       setSmallScreenMode((prev: string) =>
-        prev === "map" ? "properties" : "map"
+        prev === 'map' ? 'properties' : 'map'
       );
     }
   };
 
   const updateSmallScreenMode = () =>
     setSmallScreenMode((prev: string) => {
-      prevRef.current = prev === "map" ? "properties" : "map";
-      setCurrentView("detail");
+      prevRef.current = prev === 'map' ? 'properties' : 'map';
+      setCurrentView('detail');
       return prevRef.current;
     });
 
@@ -159,16 +159,16 @@ const MapPage = ({ params }: MapPageProps) => {
     const updateWindowDimensions = () => {
       if (sizeRef.current >= 640 && window.innerWidth < 640) {
         setCurrentView((c) => {
-          setSmallScreenMode(c !== "detail" ? "properties" : prevRef.current);
+          setSmallScreenMode(c !== 'detail' ? 'properties' : prevRef.current);
           return c;
         });
       }
       sizeRef.current = window.innerWidth;
     };
 
-    window.addEventListener("resize", updateWindowDimensions);
+    window.addEventListener('resize', updateWindowDimensions);
 
-    return () => window.removeEventListener("resize", updateWindowDimensions);
+    return () => window.removeEventListener('resize', updateWindowDimensions);
   }, []);
 
   const controlBarProps = {
@@ -182,23 +182,23 @@ const MapPage = ({ params }: MapPageProps) => {
     updateCurrentView,
   };
   const isVisible = (mode: string) =>
-    smallScreenMode === mode ? "" : "max-sm:hidden";
+    smallScreenMode === mode ? '' : 'max-sm:hidden';
 
   useEffect(() => {
     if (!selectedProperty) return;
     const propCentroid = centroid(selectedProperty.geometry);
     setStreetViewLocation(propCentroid.geometry.coordinates);
 
-    if (window.innerWidth < 640 && prevRef.current === "map") {
+    if (window.innerWidth < 640 && prevRef.current === 'map') {
       prevCoordinateRef.current = propCentroid.geometry.coordinates;
-      setSmallScreenMode("properties");
+      setSmallScreenMode('properties');
     }
   }, [selectedProperty]);
 
   // Get number of property IDs cached in Web browser's localStorage.
   // In the future, localStorage caching might be replaced by an HTTP call to an API or database.
   useEffect(() => {
-    const opa_ids = localStorage.getItem("opa_ids");
+    const opa_ids = localStorage.getItem('opa_ids');
 
     if (opa_ids && JSON.parse(opa_ids).count) {
       setSavedPropertyCount(JSON.parse(opa_ids).count);
@@ -208,118 +208,116 @@ const MapPage = ({ params }: MapPageProps) => {
   }, [currentView, selectedProperty, shouldFilterSavedProperties]);
 
   return (
-      <NextUIProvider>
-        <div className="flex flex-col">
-          <div className="flex flex-grow overflow-hidden">
-            <StreetViewModal
-              isOpen={isStreetViewModalOpen}
-              onClose={() => setIsStreetViewModalOpen(false)}
-            >
-              <StreetView
-                lat={streetViewLocation?.[1].toString() || ""}
-                lng={streetViewLocation?.[0].toString() || ""}
-                yaw="180"
-                pitch="5"
-                fov="0.7"
+    <NextUIProvider>
+      <div className="flex flex-col">
+        <div className="flex flex-grow overflow-hidden">
+          <StreetViewModal
+            isOpen={isStreetViewModalOpen}
+            onClose={() => setIsStreetViewModalOpen(false)}
+          >
+            <StreetView
+              lat={streetViewLocation?.[1].toString() || ''}
+              lng={streetViewLocation?.[0].toString() || ''}
+              yaw="180"
+              pitch="5"
+              fov="0.7"
+            />
+          </StreetViewModal>
+          <div className={`flex-grow ${isVisible('map')}`}>
+            <div className={`sticky top-0 z-10 sm:hidden ${isVisible('map')}`}>
+              <SidePanelControlBar {...controlBarProps} />
+            </div>
+            {isLinkedPropertyParsed ? (
+              <PropertyMap
+                featuresInView={featuresInView}
+                setFeaturesInView={setFeaturesInView}
+                setLoading={setLoading}
+                setHasLoadingError={setHasLoadingError}
+                selectedProperty={selectedProperty}
+                setSelectedProperty={setSelectedProperty}
+                setFeatureCount={setFeatureCount}
+                initialViewState={initialViewState}
+                prevCoordinate={prevCoordinateRef.current}
+                setPrevCoordinate={() => (prevCoordinateRef.current = null)}
               />
-            </StreetViewModal>
-            <div className={`flex-grow ${isVisible("map")}`}>
-              <div
-                className={`sticky top-0 z-10 sm:hidden ${isVisible("map")}`}
-              >
+            ) : (
+              <div className="flex w-full h-full justify-center">
+                <Spinner />
+              </div>
+            )}
+          </div>
+          <SidePanel
+            isVisible={isVisible('properties')}
+            selectedProperty={selectedProperty}
+          >
+            {!selectedProperty && (
+              <div className="h-14 sticky top-0 z-10">
                 <SidePanelControlBar {...controlBarProps} />
               </div>
-              {isLinkedPropertyParsed ? (
-                <PropertyMap
-                  featuresInView={featuresInView}
-                  setFeaturesInView={setFeaturesInView}
-                  setLoading={setLoading}
-                  selectedProperty={selectedProperty}
-                  setSelectedProperty={setSelectedProperty}
-                  setFeatureCount={setFeatureCount}
-                  initialViewState={initialViewState}
-                  prevCoordinate={prevCoordinateRef.current}
-                  setPrevCoordinate={() => (prevCoordinateRef.current = null)}
+            )}
+            {currentView === 'download' ? (
+              <div className="relative">
+                <ThemeButton
+                  color="secondary"
+                  className="right-4 lg:right-[24px] absolute top-8 min-w-[3rem]"
+                  aria-label="Close download panel"
+                  startContent={<PiX />}
+                  onPress={() => updateCurrentView('detail')}
                 />
+                <div className="p-4 mt-8 text-center">
+                  <h2 className="heading-xl font-semibold mb-4">
+                    Access Our Data
+                  </h2>
+                  <p>
+                    If you are interested in accessing the data behind this
+                    dashboard, please reach out to us at
+                    <a
+                      href="mailto:cleanandgreenphl@gmail.com"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      {' '}
+                      cleanandgreenphl@gmail.com
+                    </a>
+                    . Let us know who you are and why you want the data. We are
+                    happy to share the data with anyone with community-oriented
+                    interests.
+                  </p>
+                </div>
+              </div>
+            ) : currentView === 'filter' ? (
+              <FilterView updateCurrentView={updateCurrentView} />
+            ) : (
+              <PropertyDetailSection
+                featuresInView={featuresInView}
+                display={currentView as 'detail' | 'list'}
+                loading={loading}
+                hasLoadingError={hasLoadingError}
+                selectedProperty={selectedProperty}
+                setSelectedProperty={setSelectedProperty}
+                setIsStreetViewModalOpen={setIsStreetViewModalOpen}
+                shouldFilterSavedProperties={shouldFilterSavedProperties}
+                setShouldFilterSavedProperties={setShouldFilterSavedProperties}
+                smallScreenMode={smallScreenMode}
+                updateCurrentView={updateCurrentView}
+              />
+            )}
+          </SidePanel>
+          <ThemeButton
+            aria-label={`Change to ${smallScreenMode}`}
+            label={smallScreenMode === 'map' ? 'List View' : 'Map View'}
+            className="fixed bottom-10 left-1/2 -ml-[3.5rem] rounded-2xl sm:hidden max-md:min-w-[7rem]"
+            onPress={updateSmallScreenMode}
+            startContent={
+              smallScreenMode === 'map' ? (
+                <ListBullets />
               ) : (
-                <div className="flex w-full h-full justify-center">
-                  <Spinner />
-                </div>
-              )}
-            </div>
-            <SidePanel
-              isVisible={isVisible("properties")}
-              selectedProperty={selectedProperty}
-            >
-              {!selectedProperty && (
-                <div className="h-14 sticky top-0 z-10">
-                  <SidePanelControlBar {...controlBarProps} />
-                </div>
-              )}
-              {currentView === "download" ? (
-                <div className="relative">
-                  <ThemeButton
-                    color="secondary"
-                    className="right-4 lg:right-[24px] absolute top-8 min-w-[3rem]"
-                    aria-label="Close download panel"
-                    startContent={<PiX />}
-                    onPress={() => updateCurrentView("detail")}
-                  />
-                  <div className="p-4 mt-8 text-center">
-                    <h2 className="heading-xl font-semibold mb-4">
-                      Access Our Data
-                    </h2>
-                    <p>
-                      If you are interested in accessing the data behind this
-                      dashboard, please reach out to us at
-                      <a
-                        href="mailto:cleanandgreenphl@gmail.com"
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        {" "}
-                        cleanandgreenphl@gmail.com
-                      </a>
-                      . Let us know who you are and why you want the data. We
-                      are happy to share the data with anyone with
-                      community-oriented interests.
-                    </p>
-                  </div>
-                </div>
-              ) : currentView === "filter" ? (
-                <FilterView updateCurrentView={updateCurrentView} />
-              ) : (
-                <PropertyDetailSection
-                  featuresInView={featuresInView}
-                  display={currentView as "detail" | "list"}
-                  loading={loading}
-                  selectedProperty={selectedProperty}
-                  setSelectedProperty={setSelectedProperty}
-                  setIsStreetViewModalOpen={setIsStreetViewModalOpen}
-                  shouldFilterSavedProperties={shouldFilterSavedProperties}
-                  setShouldFilterSavedProperties={
-                    setShouldFilterSavedProperties
-                  }
-                  smallScreenMode={smallScreenMode}
-                  updateCurrentView={updateCurrentView}
-                />
-              )}
-            </SidePanel>
-            <ThemeButton
-              aria-label={`Change to ${smallScreenMode}`}
-              label={smallScreenMode === "map" ? "List View" : "Map View"}
-              className="fixed bottom-10 left-1/2 -ml-[3.5rem] rounded-2xl sm:hidden max-md:min-w-[7rem]"
-              onPress={updateSmallScreenMode}
-              startContent={
-                smallScreenMode === "map" ? (
-                  <ListBullets />
-                ) : (
-                  <GlobeHemisphereWest />
-                )
-              }
-            />
-          </div>
+                <GlobeHemisphereWest />
+              )
+            }
+          />
         </div>
-      </NextUIProvider>
+      </div>
+    </NextUIProvider>
   );
 };
 
@@ -334,15 +332,15 @@ const StreetViewModal: React.FC<{
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         onClose();
         // return focus
-        document.getElementById("outside-iframe-element")?.focus();
+        document.getElementById('outside-iframe-element')?.focus();
         const outsideElement = document.getElementById(
-          "outside-iframe-element"
+          'outside-iframe-element'
         );
         outsideElement?.focus();
-      } else if (event.key === "Tab") {
+      } else if (event.key === 'Tab') {
         // Trap focus within the container
         const container = containerRef.current;
         if (container && !container.contains(document.activeElement)) {
@@ -366,25 +364,25 @@ const StreetViewModal: React.FC<{
       ) {
         onClose();
         // return focus
-        document.getElementById("outside-iframe-element")?.focus();
+        document.getElementById('outside-iframe-element')?.focus();
         const outsideElement = document.getElementById(
-          "outside-iframe-element"
+          'outside-iframe-element'
         );
         outsideElement?.focus();
       }
     };
 
     if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-      document.addEventListener("click", handleDocumentClick);
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('click', handleDocumentClick);
     } else {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("click", handleDocumentClick);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleDocumentClick);
     }
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.removeEventListener("click", handleDocumentClick);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleDocumentClick);
     };
   }, [isOpen, onClose]);
 
@@ -394,8 +392,8 @@ const StreetViewModal: React.FC<{
       containerRef.current.focus();
     }
     // return focus when closed
-    document.getElementById("outside-iframe-element")?.focus();
-    const outsideElement = document.getElementById("outside-iframe-element");
+    document.getElementById('outside-iframe-element')?.focus();
+    const outsideElement = document.getElementById('outside-iframe-element');
     outsideElement?.focus();
   }, [isOpen]);
 

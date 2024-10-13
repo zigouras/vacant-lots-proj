@@ -1,24 +1,34 @@
-"use client";
+'use client';
 
-import { ThemeButton } from "./ThemeButton";
-import { Check, X } from "@phosphor-icons/react";
-import { useCookieContext } from "@/context/CookieContext";
+import { ThemeButton } from './ThemeButton';
+import { Check, X } from '@phosphor-icons/react';
+import { useCookieContext } from '@/context/CookieContext';
+import { useEffect, useState } from 'react';
 
 const CookieConsentBanner = () => {
   const { shouldShowBanner, setShouldAllowCookies, setShouldShowBanner } =
     useCookieContext();
+
+  const [isClientSide, setIsClientSide] = useState(false);
+
+  useEffect(() => {
+    // Ensure accessing localStorage only runs on the client side.
+    setIsClientSide(true);
+  }, []);
 
   const onClickButton = (shouldSaveCookies: boolean) => {
     setShouldAllowCookies(shouldSaveCookies);
     setShouldShowBanner(false);
   };
 
+  if (!isClientSide) return null;
+
   return (
     <div
       className={`${
         shouldShowBanner
-          ? "md:flex fixed inset-x-0 bottom-0 z-20 justify-between bg-blue-200 p-4 sm:p-6"
-          : "hidden"
+          ? 'md:flex fixed inset-x-0 bottom-0 z-20 justify-between bg-blue-200 p-4 sm:p-6'
+          : 'hidden'
       }`}
     >
       <div>

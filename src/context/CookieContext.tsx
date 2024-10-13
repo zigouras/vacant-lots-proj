@@ -4,7 +4,8 @@ import React, {
   useContext,
   useState,
   ReactNode,
-} from "react";
+  useEffect,
+} from 'react';
 
 interface CookieContextProps {
   shouldAllowCookies: boolean;
@@ -24,14 +25,34 @@ export const CookieContext = createContext<CookieContextProps | undefined>(
 export const useCookieContext = () => {
   const context = useContext(CookieContext);
   if (!context) {
-    throw new Error("useCookieContext must be used within a CookieProvider");
+    throw new Error('useCookieContext must be used within a CookieProvider');
   }
   return context;
 };
 
 export const CookieProvider: FC<CookieProviderProps> = ({ children }) => {
-  const [shouldAllowCookies, setShouldAllowCookies] = useState(false);
-  const [shouldShowBanner, setShouldShowBanner] = useState(true);
+  const [shouldAllowCookies, setShouldAllowCookies] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const storedPrefs = localStorage.getItem('cookiePrefs');
+      return storedPrefs ? JSON.parse(storedPrefs).shouldAllowCookies : false;
+    }
+    return false;
+  });
+
+  const [shouldShowBanner, setShouldShowBanner] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const storedPrefs = localStorage.getItem('cookiePrefs');
+      return storedPrefs ? JSON.parse(storedPrefs).shouldShowBanner : true;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      'cookiePrefs',
+      JSON.stringify({ shouldAllowCookies, shouldShowBanner })
+    );
+  }, [shouldAllowCookies, shouldShowBanner]);
 
   return (
     <CookieContext.Provider

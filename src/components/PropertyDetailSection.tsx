@@ -1,16 +1,8 @@
-"use client";
+'use client';
 
-import {
-  FC,
-  useState,
-  useMemo,
-  useRef,
-  useEffect,
-  SetStateAction,
-  Dispatch,
-} from "react";
-import { ThemeButton } from "./ThemeButton";
-import { PiCaretRight, PiCaretLeft } from "react-icons/pi";
+import { FC, useState, useMemo, useRef, SetStateAction, Dispatch } from 'react';
+import { ThemeButton } from './ThemeButton';
+import { PiCaretRight, PiCaretLeft } from 'react-icons/pi';
 import {
   Table,
   TableHeader,
@@ -23,31 +15,34 @@ import {
   PaginationItemType,
   PaginationItemRenderProps,
   Spinner,
-} from "@nextui-org/react";
-import PropertyCard from "./PropertyCard";
-import SinglePropertyDetail from "./SinglePropertyDetail";
-import { BarClickOptions } from "@/app/find-properties/[[...opa_id]]/page";
-import { MapGeoJSONFeature } from "maplibre-gl";
+} from '@nextui-org/react';
+import PropertyCard from './PropertyCard';
+import SinglePropertyDetail from './SinglePropertyDetail';
+import { BarClickOptions } from '@/app/find-properties/[[...opa_id]]/page';
+import { MapGeoJSONFeature } from 'maplibre-gl';
+import { X } from '@phosphor-icons/react';
+import { useFilter } from '@/context/FilterContext';
 
 const tableCols = [
   {
-    key: "ADDRESS",
-    label: "Address",
+    key: 'ADDRESS',
+    label: 'Address',
   },
   {
-    key: "guncrime_density",
-    label: "Crime Rate",
+    key: 'guncrime_density',
+    label: 'Crime Rate',
   },
   {
-    key: "tree_canopy_gap",
-    label: "Canopy Gap",
+    key: 'tree_canopy_gap',
+    label: 'Canopy Gap',
   },
 ];
 
 interface PropertyDetailSectionProps {
   featuresInView: MapGeoJSONFeature[];
-  display: "detail" | "list";
+  display: 'detail' | 'list';
   loading: boolean;
+  hasLoadingError: boolean;
   selectedProperty: MapGeoJSONFeature | null;
   setSelectedProperty: (property: MapGeoJSONFeature | null) => void;
   setIsStreetViewModalOpen: Dispatch<SetStateAction<boolean>>;
@@ -61,6 +56,7 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
   featuresInView,
   display,
   loading,
+  hasLoadingError,
   selectedProperty,
   setSelectedProperty,
   setIsStreetViewModalOpen,
@@ -70,7 +66,7 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
   smallScreenMode,
 }) => {
   const [page, setPage] = useState(1);
-
+  const { dispatch } = useFilter();
   const rowsPerPage = 6;
   const pages = Math.ceil(featuresInView.length / rowsPerPage);
   const widthRef = useRef(false);
@@ -81,7 +77,6 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
       key,
       value,
       isActive,
-      isFirst,
       onNext,
       onPrevious,
       setPage,
@@ -109,8 +104,8 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
           key={key}
           className={`${className} ${
             page === 1
-              ? "bg-gray-100/50 text-gray-900/50 hover:bg-gray-100/50 text-gray-900/50"
-              : "content-center bg-gray-100 text-gray-900 min-w-8 w-9 h-9 shadow-none"
+              ? 'bg-gray-100/50 text-gray-900/50 hover:bg-gray-100/50 text-gray-900/50'
+              : 'content-center bg-gray-100 text-gray-900 min-w-8 w-9 h-9 shadow-none'
           }`}
           color="secondary"
           aria-label={page === 1 ? `No Previous Page` : `Go to Previous Page`}
@@ -137,10 +132,11 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
         color="tertiary"
         className={`${className} ${
           isActive
-            ? "text-green-700 !font-normal	bg-green-200 font-bold rounded-md shadow-none content-center"
-            : "bg-white text-gray-900 rounded-md shadow-none rounded-md content-center"
+            ? 'text-green-700 !font-normal	bg-green-200 font-bold rounded-md shadow-none content-center'
+            : 'bg-white text-gray-900 rounded-md shadow-none rounded-md content-center'
         }`}
         aria-label={isActive ? `Page ${value}` : `Go to page ${value}`}
+        aria-current={isActive ? 'page' : false}
         onPress={() => setPage(value)}
         label={value}
       >
@@ -157,9 +153,9 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
       Toggling from map (0 results) to results in mobile causes the component
       to miscalculate the 1st active span since parent width === 0.
     */
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       widthRef.current =
-        (smallScreenMode === "properties" && window.innerWidth < 640) ||
+        (smallScreenMode === 'properties' && window.innerWidth < 640) ||
         window.innerWidth >= 640;
     }
 
@@ -170,7 +166,16 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
     return featuresInView.slice(start, end);
   }, [page, featuresInView, smallScreenMode]);
 
-  return loading ? (
+  return hasLoadingError ? (
+    <div className="flex flex-col w-full items-center justify-center p-4 mt-24">
+      <div>
+        <p className="body-md">We are having technical issues.</p>
+      </div>
+      <div>
+        <p className="body-md">Please try again later.</p>
+      </div>
+    </div>
+  ) : loading ? (
     <div className="flex-grow h-full">
       {/* Center vertically in screen */}
       <div className="flex w-full justify-center p-4 mt-24">
@@ -189,16 +194,16 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
       setShouldFilterSavedProperties={setShouldFilterSavedProperties}
       updateCurrentView={updateCurrentView}
     />
-  ) : (
+  ) : featuresInView.length ? (
     <>
       <div className="flex flex-wrap flex-grow h-full min-h-[calc(100svh-101px)] max-h-[calc(100svh-101px)] mt-2">
-        {display === "list" ? (
+        {display === 'list' ? (
           <Table
             aria-label="Property Details"
             radius="none"
             removeWrapper
             classNames={{
-              th: "bg-white",
+              th: 'bg-white',
             }}
           >
             <TableHeader>
@@ -227,13 +232,19 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
             </TableBody>
           </Table>
         ) : (
-          items.map((feature, index) => (
-            <PropertyCard
-              feature={feature}
-              key={index}
-              setSelectedProperty={setSelectedProperty}
-            />
-          ))
+          <>
+            <div aria-live="polite" className="sr-only">
+              {' '}
+              {`You are on page ${page}`}{' '}
+            </div>
+            {items.map((feature, index) => (
+              <PropertyCard
+                feature={feature}
+                key={index}
+                setSelectedProperty={setSelectedProperty}
+              />
+            ))}
+          </>
         )}
         {featuresInView?.length > 0 && widthRef.current && (
           <div>
@@ -250,14 +261,43 @@ const PropertyDetailSection: FC<PropertyDetailSectionProps> = ({
                 disableCursorAnimation={true}
               ></Pagination>
             </div>
+            <p className="text-center mt-4">
+              {`${(page - 1) * 6 + 1} to ${page === pages ? featuresInView.length : page * 6} of ${featuresInView.length}`}
+            </p>
             <div className="flex w-full justify-center py-4 px-6">
               <p className="body-sm text-gray-500">
                 Note: only the first 100 properties can be viewed in list.
-                Filter or zoom in to a smaller area to see more detail.{" "}
+                Filter or zoom in to a smaller area to see more detail.{' '}
               </p>
             </div>
           </div>
         )}
+      </div>
+    </>
+  ) : (
+    <>
+      <div className="flex w-full my-auto items-center justify-center">
+        <div aria-live="polite" className="flex flex-col justify-center">
+          <p className="text-center text-xl font-bold">No Results</p>
+          <p className="text-center mt-1">
+            There are no results that match your filter.
+          </p>
+          <div className="mx-auto mt-2">
+            <ThemeButton
+              color="secondary"
+              aria-label="Clear Filters"
+              label="Clear Filters"
+              startContent={<X />}
+              onPress={() =>
+                dispatch({
+                  type: 'CLEAR_DIMENSIONS',
+                  property: '',
+                  dimensions: [],
+                })
+              }
+            />
+          </div>
+        </div>
       </div>
     </>
   );

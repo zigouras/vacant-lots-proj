@@ -3,6 +3,7 @@ import time
 
 from classes.backup_archive_database import BackupArchiveDatabase
 from classes.diff_report import DiffReport
+from config.config import FORCE_RELOAD, tiles_file_id_prefix
 from config.psql import conn
 from data_utils.access_process import access_process
 from data_utils.city_owned_properties import city_owned_properties
@@ -28,8 +29,6 @@ from data_utils.tactical_urbanism import tactical_urbanism
 from data_utils.tree_canopy import tree_canopy
 from data_utils.unsafe_buildings import unsafe_buildings
 from data_utils.vacant_properties import vacant_properties
-
-from config.config import FORCE_RELOAD, tiles_file_id_prefix
 
 # Ensure the directory containing awkde is in the Python path
 awkde_path = "/usr/src/app"
@@ -68,18 +67,20 @@ if FORCE_RELOAD:
     if backup.is_backup_schema_exists():
         backup.archive_backup_schema()
         conn.commit()
-        time.sleep(1) # make sure we get a different timestamp
-        backup = BackupArchiveDatabase() # create a new one so we get a new timestamp
-    
+        time.sleep(1)  # make sure we get a different timestamp
+        backup = BackupArchiveDatabase()  # create a new one so we get a new timestamp
+
     backup.backup_schema()
     conn.commit()
 
 # Load Vacant Property Data
 dataset = vacant_properties()
 
+print("Initial vacant properties dataset columns:", dataset.gdf.columns)
+
 # Load and join other datasets
 for service in services:
-   dataset = service(dataset)
+    dataset = service(dataset)
 
 # Add Priority Level
 dataset = priority_level(dataset)
@@ -92,13 +93,13 @@ if backup is None:
     backup = BackupArchiveDatabase()
 backup.backup_tiles_file()
 
-# Post to Mapbox
-dataset.build_and_publish_pmtiles(tiles_file_id_prefix)
-
 # Finalize in Postgres
 dataset.gdf.to_postgis("vacant_properties_end", conn, if_exists="replace", index=False)
 
 conn.commit()
+
+# Post to Mapbox
+dataset.build_and_publish(tiles_file_id_prefix)
 
 # if we are reloading, run the diff report, then archive the backup and finally prune old archives
 if FORCE_RELOAD:
